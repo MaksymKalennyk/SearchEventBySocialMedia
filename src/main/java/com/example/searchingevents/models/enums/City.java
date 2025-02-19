@@ -6,7 +6,8 @@ import java.util.List;
 public enum City {
     KYIV("Київ", Arrays.asList("київ", "києві", "києва", "києвом", "kiev", "kyiv")),
     LVIV("Львів", Arrays.asList("львів", "львова", "львові", "львовом")),
-    ODESA("Одеса", Arrays.asList("одеса", "одесі", "одесою", "odesa")),;
+    ODESA("Одеса", Arrays.asList("одеса", "одесі", "одесою", "odesa")),
+    KAMIANETS("Камʼянець-Подільський", Arrays.asList("кам'янець-подільський", "кам’янець", "kamianets", "кам’янець-подільський")),;
 
     private final String value;
     private final List<String> keywords;

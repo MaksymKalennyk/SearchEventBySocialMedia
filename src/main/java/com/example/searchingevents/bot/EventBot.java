@@ -6,18 +6,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class EventBot extends TelegramLongPollingBot {
 
     private static final Logger logger = LoggerFactory.getLogger(EventBot.class);
 
-    private final String botToken = "7748130126:AAEybdxxqL1G2n0GdvKHYuHkl_hlYszjzro";
-    private final String botUsername = "Searching-Events";
+    private final String botToken = System.getProperty("bot.token", "default-token");
+    private final String botUsername = System.getProperty("bot.username", "default-username");
 
     private final EventService eventService;
     private final ParsingService parsingService;
@@ -61,23 +65,47 @@ public class EventBot extends TelegramLongPollingBot {
                 Long chatId = update.getMessage().getChatId();
                 Integer messageId = update.getMessage().getMessageId();
 
-                logger.info("Отримано повідомлення в чаті {} (ID: {}): {}", chatId, messageId, text);
+                String cleanedText = parsingService.removeEmojis(text);
 
-                // Парсимо повідомлення
-                Event parsedEvent = parsingService.parseMessage(text);
-                if (parsedEvent != null) {
-                    parsedEvent.setChatId(chatId);
-                    parsedEvent.setMessageId(messageId);
-                    // Зберігаємо сирий текст (без емоджі) або оригінальний - це на ваш розсуд:
-                    // Якщо треба оригінал (щоб не втратити емоджі), краще налаштувати utf8mb4 у БД
-                    parsedEvent.setRawText(parsingService.removeEmojis(text));
+                List<Event> eventsToSave = new ArrayList<>();
 
-                    logger.info("Збереження розпізнаного івенту: {}", parsedEvent);
+                List<MessageEntity> entities = update.getMessage().getEntities();
+                if (entities != null) {
+                    int countLinks = 0;
+                    for (MessageEntity entity : entities) {
+                        if ("text_link".equals(entity.getType())) {
+                            countLinks++;
+                            String textLink = entity.getText();
+                            String linkUrl  = entity.getUrl();
 
-                    // Зберігаємо в БД
-                    eventService.saveEvent(parsedEvent);
+                            Event ev = parsingService.parseFromTextLink(
+                                    textLink,
+                                    linkUrl,
+                                    cleanedText
+                            );
+                            ev.setChatId(chatId);
+                            ev.setMessageId(messageId);
+                            ev.setRawText(cleanedText);
+
+                            eventsToSave.add(ev);
+
+                        }
+                    }
+                    if (countLinks == 0) {
+                        List<Event> fallbackList = parsingService.parseMultipleEvents(cleanedText);
+                        eventsToSave.addAll(fallbackList);
+                    }
                 } else {
-                    logger.warn("Не вдалося розпізнати івент у повідомленні: {}", text);
+                    List<Event> fallbackList = parsingService.parseMultipleEvents(cleanedText);
+                    eventsToSave.addAll(fallbackList);
+                }
+                if (!eventsToSave.isEmpty()) {
+                    for (Event ev : eventsToSave) {
+                        logger.info("Збереження розпізнаного івенту: {}", ev);
+                        eventService.saveEvent(ev);
+                    }
+                } else {
+                    logger.warn("Не вдалося розпізнати жоден івент у повідомленні: {}", text);
                 }
             }
         } else {

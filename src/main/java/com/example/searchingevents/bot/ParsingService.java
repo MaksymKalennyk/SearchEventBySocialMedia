@@ -10,8 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.Year;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,48 +19,112 @@ public class ParsingService {
 
     private static final Logger logger = LoggerFactory.getLogger(ParsingService.class);
 
-    /**
-     * Парсимо текст і, якщо знайдено релевантні дані (концерт/театр...),
-     * повертаємо Event (без збереження).
-     * Якщо текст не містить івенту, повертаємо null.
-     */
-    public Event parseMessage(String text) {
-        if (text == null) return null;
+    public Event parseFromTextLink(String textLink, String linkUrl, String fullMessage) {
+        String cityPart = textLink;
+        String datePart = null;
+
+        int commaIndex = textLink.indexOf(',');
+        if (commaIndex != -1) {
+            cityPart = textLink.substring(0, commaIndex).trim();
+            datePart = textLink.substring(commaIndex + 1).trim();
+        }
+
+        EventType detectedType = detectTypeFromText(fullMessage.toLowerCase());
+
+        City detectedCity = City.detect(cityPart.toLowerCase());
+
+        LocalDate parsedDate = parseDate(Objects.requireNonNullElse(datePart, textLink).toLowerCase());
+
+        Event ev = new Event();
+        ev.setEventType(detectedType);
+
+        if (detectedCity != null) {
+            ev.setCity(detectedCity.getValue());
+        } else {
+            ev.setCity(cityPart);
+        }
+
+        ev.setEventDate(parsedDate);
+        ev.setUrl(linkUrl);
+
+        Integer price = parsePrice(fullMessage.toLowerCase());
+        ev.setPrice(price);
+
+        return ev;
+    }
+
+    public List<Event> parseMultipleEvents(String text) {
+        if (text == null) {
+            return Collections.emptyList();
+        }
 
         String cleaned = removeEmojis(text);
-        String lower = cleaned.toLowerCase();
+        EventType detectedType = detectTypeFromText(cleaned.toLowerCase());
 
-        // Визначаємо тип івенту
-        EventType detectedType = EventType.detect(lower);
+        String regex = "([^,]+),\\s*([^()]+)\\((https?://[^)]+)\\)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(cleaned);
+
+        List<Event> events = new ArrayList<>();
+        while (matcher.find()) {
+            String cityPart = matcher.group(1).trim();
+            String datePart = matcher.group(2).trim();
+            String urlPart  = matcher.group(3).trim();
+
+            City detectedCity = City.detect(cityPart.toLowerCase());
+            LocalDate parsedDate = parseDate(datePart.toLowerCase());
+
+            Event ev = new Event();
+            ev.setEventType(detectedType);
+            ev.setUrl(urlPart);
+
+            if (detectedCity != null) {
+                ev.setCity(detectedCity.getValue());
+            } else {
+                ev.setCity(cityPart);
+            }
+            ev.setEventDate(parsedDate);
+
+            Integer price = parsePrice(cleaned.toLowerCase());
+            ev.setPrice(price);
+
+            events.add(ev);
+        }
+
+        if (events.isEmpty()) {
+            Event single = parseSingleEvent(cleaned);
+            if (single != null) {
+                events.add(single);
+            }
+        }
+
+        return events;
+    }
+
+    public Event parseSingleEvent(String text) {
+        EventType detectedType = detectTypeFromText(text.toLowerCase());
         if (detectedType == null) {
             return null;
         }
+        City detectedCity = City.detect(text.toLowerCase());
+        LocalDate date = parseDate(text.toLowerCase());
+        Integer price = parsePrice(text.toLowerCase());
 
-        // Визначаємо місто
-        City detectedCity = City.detect(lower);
-
-        // Парсимо дату, ціну і т.д.
-        LocalDate date = parseDate(lower);
-        Integer price = parsePrice(lower);
-
-        // Формуємо Event
-        Event event = new Event();
-        event.setEventType(detectedType);       // enum
-        // Якщо місто знайдено, збережемо його «людську» назву (наприклад, "Львів")
+        Event e = new Event();
+        e.setEventType(detectedType);
         if (detectedCity != null) {
-            event.setCity(detectedCity.getValue());
-        } else {
-            event.setCity(null); // або "Невідомо"
+            e.setCity(detectedCity.getValue());
         }
-        event.setEventDate(date);
-        event.setPrice(price);
-
-        return event;
+        e.setEventDate(date);
+        e.setPrice(price);
+        return e;
     }
 
+    private EventType detectTypeFromText(String lower) {
+        return EventType.detect(lower);
+    }
 
     private LocalDate parseDate(String lower) {
-        // Мапа назви місяця -> номер
         Map<String, Integer> monthMap = new HashMap<>();
         monthMap.put("січня", 1);
         monthMap.put("лютого", 2);
@@ -76,37 +139,30 @@ public class ParsingService {
         monthMap.put("листопада", 11);
         monthMap.put("грудня", 12);
 
-        // RegEx: "14 лютого", "1 січня", ...
         String regex = "\\b(\\d{1,2})\\s+(січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня)\\b";
-        Matcher matcher = Pattern.compile(regex).matcher(lower);
-        if (matcher.find()) {
-            String dayStr = matcher.group(1);
-            String monthStr = matcher.group(2);
+        Matcher m = Pattern.compile(regex).matcher(lower);
+        if (m.find()) {
+            String dayStr = m.group(1);
+            String monthStr = m.group(2);
             int day = Integer.parseInt(dayStr);
             int month = monthMap.getOrDefault(monthStr, 0);
 
-            int year = Year.now().getValue(); // Припускаємо поточний рік
+            int year = Year.now().getValue();
             try {
-                return LocalDate.of(year, month, day);
+                return java.time.LocalDate.of(year, month, day);
             } catch (DateTimeException e) {
-                // Якщо date некоректна, вертаємо null
                 return null;
             }
         }
-        return null; // Якщо не знайшли нічого
+        return null;
     }
 
-    /**
-     * Шукаємо перше число, що передує або йде після (грн|₴|гривень).
-     * Напр.: "200 грн", "300₴", "150 гривень".
-     */
     private Integer parsePrice(String lower) {
         String regex = "(\\d+)\\s?(грн|₴|гривень)";
         Matcher matcher = Pattern.compile(regex).matcher(lower);
         if (matcher.find()) {
-            String priceStr = matcher.group(1);
             try {
-                return Integer.valueOf(priceStr);
+                return Integer.valueOf(matcher.group(1));
             } catch (NumberFormatException e) {
                 return null;
             }
@@ -114,12 +170,8 @@ public class ParsingService {
         return null;
     }
 
-    /**
-     * Видалити емоджі (та інші 4-байтові символи) з тексту.
-     */
     public String removeEmojis(String text) {
         if (text == null) return null;
-
         StringBuilder sb = new StringBuilder();
         text.codePoints().forEach(cp -> {
             if (Character.isBmpCodePoint(cp)) {

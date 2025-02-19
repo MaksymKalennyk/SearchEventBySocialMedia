@@ -27,6 +27,8 @@ public class Event {
 
     private String city;
 
+    private String url;
+
     private LocalDateTime createdAt;
 
     public Long getId() {
@@ -100,5 +102,13 @@ public class Event {
 
     public void setCity(String city) {
         this.city = city;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }
