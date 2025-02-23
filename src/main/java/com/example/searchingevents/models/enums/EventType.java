@@ -18,10 +18,6 @@ public enum EventType {
         return keywords;
     }
 
-    /**
-     * Шукаємо в text (у нижньому регістрі) ключові слова,
-     * якщо знаходимо — повертаємо відповідний EventType.
-     */
     public static EventType detect(String lowerText) {
         for (EventType type : values()) {
             for (String kw : type.keywords) {

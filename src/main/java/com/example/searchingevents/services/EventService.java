@@ -28,22 +28,26 @@ public class EventService {
 
     public List<Event> findEvents(String eventTypeStr, String city, int maxPrice, LocalDate fromDate, LocalDate toDate) {
         List<Event> all = eventRepository.findAll();
-
         return all.stream()
                 .filter(e -> {
-                    if (e.getEventType() == null) return false;
+                    if (eventTypeStr == null) return true;
+                    if (e.getEventType() == null) return true;
                     return e.getEventType().name().equalsIgnoreCase(eventTypeStr);
                 })
-                .filter(e -> e.getCity() != null
-                        && e.getCity().equalsIgnoreCase(city))
-                .filter(e -> e.getPrice() != null
-                        && e.getPrice() <= maxPrice)
                 .filter(e -> {
-                    if (e.getEventDate() == null) return false;
-                    return !e.getEventDate().isBefore(fromDate)
-                            && !e.getEventDate().isAfter(toDate);
+                    if (city == null) return true;
+                    if (e.getCity() == null) return true;
+                    return e.getCity().equalsIgnoreCase(city);
+                })
+                .filter(e -> {
+                    if (e.getPrice() == null) return true;
+                    return e.getPrice() <= maxPrice;
+                })
+                .filter(e -> {
+                    if (fromDate == null || toDate == null) return true;
+                    if (e.getEventDate() == null) return true;
+                    return !e.getEventDate().isBefore(fromDate) && !e.getEventDate().isAfter(toDate);
                 })
                 .collect(Collectors.toList());
     }
-
 }

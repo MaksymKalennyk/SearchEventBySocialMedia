@@ -1,6 +1,7 @@
 package com.example.searchingevents.bot;
 
 import com.example.searchingevents.models.Event;
+import com.example.searchingevents.models.SearchCriteria;
 import com.example.searchingevents.models.enums.City;
 import com.example.searchingevents.models.enums.EventType;
 import org.slf4j.Logger;
@@ -180,4 +181,82 @@ public class ParsingService {
         });
         return sb.toString();
     }
+
+    public SearchCriteria parseSearchCriteria(String text) {
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+
+        // Очищаємо текст від емоджі та переводимо в нижній регістр
+        String lower = removeEmojis(text).toLowerCase();
+        SearchCriteria criteria = new SearchCriteria();
+
+        // --- Парсинг діапазону дат ---
+        // Шукаємо шаблон: "з <дата> до <дата>" (наприклад, "з 1 березня до 30 березня")
+        Pattern dateRangePattern = Pattern.compile("з\\s+(\\d{1,2}\\s+\\p{L}+)\\s+до\\s+(\\d{1,2}\\s+\\p{L}+)");
+        Matcher dateRangeMatcher = dateRangePattern.matcher(lower);
+        if (dateRangeMatcher.find()) {
+            String fromDateStr = dateRangeMatcher.group(1).trim();
+            String toDateStr = dateRangeMatcher.group(2).trim();
+            LocalDate dateFrom = parseDate(fromDateStr);
+            LocalDate dateTo = parseDate(toDateStr);
+            criteria.setDateFrom(dateFrom);
+            criteria.setDateTo(dateTo);
+        } else {
+            criteria.setDateFrom(null);
+            criteria.setDateTo(null);
+        }
+
+        // --- Парсинг бюджету ---
+        // Шукаємо "до <число> (гривень|грн|₴)"
+        Pattern budgetPattern = Pattern.compile("до\\s+(\\d+)\\s?(грн|₴|гривень)");
+        Matcher budgetMatcher = budgetPattern.matcher(lower);
+        if (budgetMatcher.find()) {
+            try {
+                int budget = Integer.parseInt(budgetMatcher.group(1));
+                criteria.setMaxPrice(budget);
+            } catch (NumberFormatException e) {
+                criteria.setMaxPrice(0);
+            }
+        } else {
+            criteria.setMaxPrice(0);
+        }
+
+        // --- Парсинг міста ---
+        // Використовуємо регекс, що дозволяє знайти як "київ", так і "києві" (аналогічно для інших міст)
+        Pattern cityPattern = Pattern.compile("в\\s+((?:київ|києві)|(?:львів|львові)|(?:одеса|одесі))");
+        Matcher cityMatcher = cityPattern.matcher(lower);
+        if (cityMatcher.find()) {
+            String cityFound = cityMatcher.group(1);
+            City detectedCity = City.detect(cityFound);
+            if (detectedCity != null) {
+                criteria.setCity(detectedCity);
+            } else {
+                criteria.setCity(null);
+            }
+        } else {
+            criteria.setCity(null);
+        }
+
+        // --- Парсинг типу івенту ---
+        // Якщо запит містить і "театр"/"вистава", і "концерт" – не фільтруємо за типом (залишаємо null)
+        boolean hasTheatre = lower.contains("театр") || lower.contains("вистава");
+        boolean hasConcert = lower.contains("концерт");
+        if (hasTheatre && hasConcert) {
+            criteria.setEventType(null);
+        } else if (hasConcert) {
+            criteria.setEventType(EventType.CONCERT);
+        } else if (hasTheatre) {
+            criteria.setEventType(EventType.THEATRE);
+        } else {
+            criteria.setEventType(null);
+        }
+
+        logger.info("Parsed search criteria: eventType={}, city={}, maxPrice={}, dateFrom={}, dateTo={}",
+                criteria.getEventType(),
+                criteria.getCity() != null ? criteria.getCity().getValue() : null,
+                criteria.getMaxPrice(), criteria.getDateFrom(), criteria.getDateTo());
+        return criteria;
+    }
+
 }
