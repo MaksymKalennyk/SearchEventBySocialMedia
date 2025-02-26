@@ -7,16 +7,14 @@ import com.example.searchingevents.models.SearchCriteria;
 import com.example.searchingevents.services.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/search")
+@RequestMapping("/api")
+@CrossOrigin
 public class SearchController {
 
     private final EventService eventService;
@@ -28,7 +26,7 @@ public class SearchController {
         this.parsingService = parsingService;
     }
 
-    @PostMapping
+    @PostMapping("/search")
     public ResponseEntity<List<EventDTO>> searchEvents(@RequestBody String query) {
         SearchCriteria criteria = parsingService.parseSearchCriteria(query);
         if (criteria == null) {
@@ -58,7 +56,7 @@ public class SearchController {
         dto.setChatId(event.getChatId());
         dto.setMessageId(event.getMessageId());
         dto.setRawText(event.getRawText());
-        dto.setEventType(event.getEventType() != null ? event.getEventType().name() : "Невідомо");
+        dto.setEventType(event.getEventType() != null ? event.getEventType().getDisplayValue() : "Невідомо");
         dto.setEventDate(event.getEventDate());
         dto.setPrice(event.getPrice() != null ? String.valueOf(event.getPrice()) : "Невідомо");
         dto.setCity(event.getCity() != null ? event.getCity() : "Невідомо");

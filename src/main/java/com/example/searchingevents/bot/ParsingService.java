@@ -187,12 +187,9 @@ public class ParsingService {
             return null;
         }
 
-        // Очищаємо текст від емоджі та переводимо в нижній регістр
         String lower = removeEmojis(text).toLowerCase();
         SearchCriteria criteria = new SearchCriteria();
 
-        // --- Парсинг діапазону дат ---
-        // Шукаємо шаблон: "з <дата> до <дата>" (наприклад, "з 1 березня до 30 березня")
         Pattern dateRangePattern = Pattern.compile("з\\s+(\\d{1,2}\\s+\\p{L}+)\\s+до\\s+(\\d{1,2}\\s+\\p{L}+)");
         Matcher dateRangeMatcher = dateRangePattern.matcher(lower);
         if (dateRangeMatcher.find()) {
@@ -207,8 +204,6 @@ public class ParsingService {
             criteria.setDateTo(null);
         }
 
-        // --- Парсинг бюджету ---
-        // Шукаємо "до <число> (гривень|грн|₴)"
         Pattern budgetPattern = Pattern.compile("до\\s+(\\d+)\\s?(грн|₴|гривень)");
         Matcher budgetMatcher = budgetPattern.matcher(lower);
         if (budgetMatcher.find()) {
@@ -222,24 +217,16 @@ public class ParsingService {
             criteria.setMaxPrice(0);
         }
 
-        // --- Парсинг міста ---
-        // Використовуємо регекс, що дозволяє знайти як "київ", так і "києві" (аналогічно для інших міст)
         Pattern cityPattern = Pattern.compile("в\\s+((?:київ|києві)|(?:львів|львові)|(?:одеса|одесі))");
         Matcher cityMatcher = cityPattern.matcher(lower);
         if (cityMatcher.find()) {
             String cityFound = cityMatcher.group(1);
             City detectedCity = City.detect(cityFound);
-            if (detectedCity != null) {
-                criteria.setCity(detectedCity);
-            } else {
-                criteria.setCity(null);
-            }
+            criteria.setCity(detectedCity);
         } else {
             criteria.setCity(null);
         }
 
-        // --- Парсинг типу івенту ---
-        // Якщо запит містить і "театр"/"вистава", і "концерт" – не фільтруємо за типом (залишаємо null)
         boolean hasTheatre = lower.contains("театр") || lower.contains("вистава");
         boolean hasConcert = lower.contains("концерт");
         if (hasTheatre && hasConcert) {

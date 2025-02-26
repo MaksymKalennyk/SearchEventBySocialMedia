@@ -1,1 +1,44 @@
-<p>search works!</p>
+<div class="container my-5">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h2>Пошук івентів</h2>
+    </div>
+    <div class="card-body">
+      <form (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label for="query" class="form-label">Введіть запит:</label>
+          <textarea id="query" [(ngModel)]="query" name="query" rows="5" class="form-control" placeholder="Введіть запит тут"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Пошук</button>
+      </form>
+
+      <div *ngIf="error" class="alert alert-danger mt-3">
+        {{ error }}
+      </div>
+
+      <div *ngIf="results && results.length" class="mt-4">
+        <h3>Результати пошуку:</h3>
+        <div class="list-group">
+          <div *ngFor="let event of results" class="list-group-item">
+            <p><strong>Тип: </strong> {{ event.eventType || 'Невідомо' }}</p>
+            <p><strong>Місто: </strong> {{ event.city || 'Невідомо' }}</p>
+            <p><strong>Дата: </strong> {{ event.eventDate | date:"d MMMM y 'year'"}}</p>
+            <p>
+              <strong>Ціна: </strong>
+              <span *ngIf="event.price !== 'Невідомо' && event.price">{{ event.price }} ₴</span>
+              <span *ngIf="!event.price || event.price === 'Невідомо'">Невідомо</span>
+            </p>
+            <p>
+              <strong>Посилання: </strong>
+              <a [href]="event.url" target="_blank">{{ event.url || 'Невідомо' }}</a>
+            </p>
+            <p><strong>Текст: </strong> {{ event.rawText }}</p>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="results && results.length === 0" class="mt-4">
+        <div class="alert alert-info">За вашим запитом нічого не знайдено.</div>
+      </div>
+    </div>
+  </div>
+</div>
