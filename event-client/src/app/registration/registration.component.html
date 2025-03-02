@@ -1,0 +1,37 @@
+<div class="container mt-5">
+  <h2>Registration</h2>
+  <form (ngSubmit)="submitForm()" #loginForm="ngForm">
+    <div class="form-group">
+      <label for="username">Username:</label>
+      <input type="text" class="form-control" id="username" name="username" [(ngModel)]="user.username" required minlength="5" maxlength="50" autocomplete="current-username" #usernameCtrl="ngModel">
+      <div class="text-danger" *ngIf="usernameCtrl.invalid && (usernameCtrl.dirty || usernameCtrl.touched)">
+        <div *ngIf="usernameCtrl.hasError('required')">Username is required.</div>
+        <div *ngIf="usernameCtrl.hasError('minlength')">Username must be at least 5 characters.</div>
+        <div *ngIf="usernameCtrl.hasError('maxlength')">Username cannot exceed 50 characters.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input type="password" class="form-control" id="password" name="password" [(ngModel)]="user.password" required minlength="8" maxlength="255" autocomplete="current-password" #passwordCtrl="ngModel">
+      <div class="text-danger" *ngIf="passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched)">
+        <div *ngIf="passwordCtrl.hasError('required')">Password is required.</div>
+        <div *ngIf="passwordCtrl.hasError('minlength')">Password must be at least 8 characters.</div>
+        <div *ngIf="passwordCtrl.hasError('maxlength')">Password cannot exceed 255 characters.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input type="email" class="form-control" id="email" name="email" [(ngModel)]="user.email" required email maxlength="255" autocomplete="current-email" #emailCtrl="ngModel">
+      <div class="text-danger" *ngIf="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)">
+        <div *ngIf="emailCtrl.hasError('required')">Email is required.</div>
+        <div *ngIf="emailCtrl.hasError('email')">Email must be in the format user&#64;example.com.</div>
+        <div *ngIf="emailCtrl.hasError('maxlength')">Email cannot exceed 255 characters.</div>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-primary" (click)="login()">Login</button>
+    <button type="submit" class="btn btn-primary">Registration</button>
+  </form>
+</div>
