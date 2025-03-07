@@ -26,6 +26,9 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
 	implementation 'io.swagger:swagger-annotations:2.0.0-rc2'
 	implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+	implementation 'org.seleniumhq.selenium:selenium-java:4.8.3'
+	implementation("io.github.bonigarcia:webdrivermanager:5.9.3")
+	implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
 
 	compileOnly 'org.projectlombok:lombok'
 

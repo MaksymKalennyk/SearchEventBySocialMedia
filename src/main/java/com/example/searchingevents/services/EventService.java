@@ -20,14 +20,21 @@ public class EventService {
         this.eventRepository = eventRepository;
     }
 
-
     public Event saveEvent(Event event) {
         event.setCreatedAt(LocalDateTime.now());
         return eventRepository.save(event);
     }
 
+    /**
+     * Фільтруємо події за:
+     * 1) eventTypeStr (null = не фільтруємо)
+     * 2) city (null = не фільтруємо)
+     * 3) maxPrice (перевіряємо мінімальну ціну серед ticketOptions)
+     * 4) діапазон дат
+     */
     public List<Event> findEvents(String eventTypeStr, String city, int maxPrice, LocalDate fromDate, LocalDate toDate) {
         List<Event> all = eventRepository.findAll();
+
         return all.stream()
                 .filter(e -> {
                     if (eventTypeStr == null) return true;
@@ -40,8 +47,12 @@ public class EventService {
                     return e.getCity().equalsIgnoreCase(city);
                 })
                 .filter(e -> {
-                    if (e.getPrice() == null) return true;
-                    return e.getPrice() <= maxPrice;
+                    if (maxPrice <= 0) return true;
+                    int minPriceOfEvent = e.getTicketOptions().stream()
+                            .mapToInt(opt -> opt.getPrice() != null ? opt.getPrice() : 0)
+                            .min()
+                            .orElse(0);
+                    return minPriceOfEvent <= maxPrice;
                 })
                 .filter(e -> {
                     if (fromDate == null || toDate == null) return true;
@@ -51,3 +62,4 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 }
+

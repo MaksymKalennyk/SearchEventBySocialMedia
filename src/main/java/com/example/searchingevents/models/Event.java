@@ -2,15 +2,19 @@ package com.example.searchingevents.models;
 
 import com.example.searchingevents.models.enums.EventType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Table(name = "events")
 public class Event {
 
@@ -20,17 +24,20 @@ public class Event {
 
     private Long chatId;
     private Integer messageId;
+
     @Lob
     private String rawText;
 
     @Enumerated(EnumType.STRING)
     private EventType eventType;
     private LocalDate eventDate;
-    private Integer price;
 
     private String city;
 
     private String url;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TicketOption> ticketOptions = new ArrayList<>();
 
     private LocalDateTime createdAt;
 

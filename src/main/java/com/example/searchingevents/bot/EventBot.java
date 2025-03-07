@@ -2,6 +2,7 @@ package com.example.searchingevents.bot;
 
 import com.example.searchingevents.models.Event;
 import com.example.searchingevents.services.EventService;
+import com.example.searchingevents.services.SeleniumScraperService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
@@ -26,12 +27,18 @@ public class EventBot extends TelegramLongPollingBot {
     private final EventService eventService;
     private final ParsingService parsingService;
 
+    // Додаємо SeleniumScraperService
+    private final SeleniumScraperService seleniumScraperService;
+
     @Autowired
-    public EventBot(EventService eventService, ParsingService parsingService) {
+    public EventBot(EventService eventService,
+                    ParsingService parsingService,
+                    SeleniumScraperService seleniumScraperService) {
         super(new DefaultBotOptions());
         this.eventService = eventService;
         this.parsingService = parsingService;
-        logger.info("EventBot створено з EventService та ParsingService");
+        this.seleniumScraperService = seleniumScraperService;
+        logger.info("EventBot створено з EventService, ParsingService, та SeleniumScraperService");
     }
 
     @Override
@@ -87,18 +94,49 @@ public class EventBot extends TelegramLongPollingBot {
                             ev.setMessageId(messageId);
                             ev.setRawText(cleanedText);
 
-                            eventsToSave.add(ev);
+                            if (ev.getUrl() != null && !ev.getUrl().isEmpty()) {
+                                logger.info("Викликаємо SeleniumScraperService для URL={}", ev.getUrl());
+                                var ticketOptions = seleniumScraperService.scrapePrices(ev.getUrl());
+                                ticketOptions.forEach(opt -> opt.setEvent(ev));
+                                ev.getTicketOptions().addAll(ticketOptions);
+                            }
 
+                            eventsToSave.add(ev);
                         }
                     }
                     if (countLinks == 0) {
                         List<Event> fallbackList = parsingService.parseMultipleEvents(cleanedText);
-                        eventsToSave.addAll(fallbackList);
+                        for (Event ev : fallbackList) {
+                            ev.setChatId(chatId);
+                            ev.setMessageId(messageId);
+                            ev.setRawText(cleanedText);
+
+                            if (ev.getUrl() != null && !ev.getUrl().isEmpty()) {
+                                logger.info("Викликаємо SeleniumScraperService для URL={}", ev.getUrl());
+                                var ticketOptions = seleniumScraperService.scrapePrices(ev.getUrl());
+                                ticketOptions.forEach(opt -> opt.setEvent(ev));
+                                ev.getTicketOptions().addAll(ticketOptions);
+                            }
+                            eventsToSave.add(ev);
+                        }
                     }
                 } else {
                     List<Event> fallbackList = parsingService.parseMultipleEvents(cleanedText);
-                    eventsToSave.addAll(fallbackList);
+                    for (Event ev : fallbackList) {
+                        ev.setChatId(chatId);
+                        ev.setMessageId(messageId);
+                        ev.setRawText(cleanedText);
+
+                        if (ev.getUrl() != null && !ev.getUrl().isEmpty()) {
+                            logger.info("Викликаємо SeleniumScraperService для URL={}", ev.getUrl());
+                            var ticketOptions = seleniumScraperService.scrapePrices(ev.getUrl());
+                            ticketOptions.forEach(opt -> opt.setEvent(ev));
+                            ev.getTicketOptions().addAll(ticketOptions);
+                        }
+                        eventsToSave.add(ev);
+                    }
                 }
+
                 if (!eventsToSave.isEmpty()) {
                     for (Event ev : eventsToSave) {
                         logger.info("Збереження розпізнаного івенту: {}", ev);
