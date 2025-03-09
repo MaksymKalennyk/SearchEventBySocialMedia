@@ -4,12 +4,98 @@
       <h2>Пошук івентів</h2>
     </div>
     <div class="card-body">
-      <form (ngSubmit)="onSubmit()">
+      <form [formGroup]="searchForm" (ngSubmit)="onSubmit()">
+
         <div class="mb-3">
-          <label for="query" class="form-label">Введіть запит:</label>
-          <textarea id="query" [(ngModel)]="query" name="query" rows="5" class="form-control" placeholder="Введіть запит тут"></textarea>
+          <label for="city" class="form-label">Місто:</label>
+          <input
+            id="city"
+            type="text"
+            formControlName="city"
+            class="form-control"
+            placeholder="Введіть місто"
+          />
+          <div *ngIf="cityCtrl?.invalid && (cityCtrl?.dirty || cityCtrl?.touched)" class="text-danger">
+            <small *ngIf="cityCtrl?.errors?.['required']">
+              Місто є обов’язковим
+            </small>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary">Пошук</button>
+
+        <div class="mb-3">
+          <label for="maxPrice" class="form-label">Максимальна ціна (грн):</label>
+          <input
+            id="maxPrice"
+            type="number"
+            formControlName="maxPrice"
+            class="form-control"
+            placeholder="Наприклад, 200"
+          />
+          <div *ngIf="maxPriceCtrl?.invalid && (maxPriceCtrl?.dirty || maxPriceCtrl?.touched)" class="text-danger">
+            <small *ngIf="maxPriceCtrl?.errors?.['min']">
+              Ціна має бути більшою за 0
+            </small>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="eventType" class="form-label">Тип івенту:</label>
+          <select
+            id="eventType"
+            formControlName="eventType"
+            class="form-select"
+          >
+            <option [ngValue]="null">-- Будь-який --</option>
+            <option value="concert">Концерт</option>
+            <option value="theatre">Театр</option>
+            <option value="other">Інше</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="dateFrom" class="form-label">Початкова дата/час:</label>
+          <input
+            id="dateFrom"
+            type="datetime-local"
+            formControlName="dateFrom"
+            class="form-control"
+          />
+          <div *ngIf="dateFromCtrl?.invalid && (dateFromCtrl?.dirty || dateFromCtrl?.touched)" class="text-danger">
+            <small *ngIf="dateFromCtrl?.errors?.['required']">
+              Початкова дата є обов'язковою
+            </small>
+            <small *ngIf="dateFromCtrl?.errors?.['dateInPast']">
+              Дата не може бути в минулому
+            </small>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="dateTo" class="form-label">Кінцева дата/час:</label>
+          <input
+            id="dateTo"
+            type="datetime-local"
+            formControlName="dateTo"
+            class="form-control"
+          />
+          <div *ngIf="dateToCtrl?.invalid && (dateToCtrl?.dirty || dateToCtrl?.touched)" class="text-danger">
+            <small *ngIf="dateToCtrl?.errors?.['required']">
+              Кінцева дата є обов'язковою
+            </small>
+            <small *ngIf="dateToCtrl?.errors?.['dateInPast']">
+              Дата не може бути в минулому
+            </small>
+          </div>
+        </div>
+
+        <div *ngIf="searchForm.errors?.['invalidDateRange'] && (searchForm.dirty || searchForm.touched)"
+             class="text-danger">
+          Початкова дата не може бути пізніше кінцевої!
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="searchForm.invalid">
+          Пошук
+        </button>
       </form>
 
       <div *ngIf="error" class="alert alert-danger mt-3">
@@ -20,19 +106,23 @@
         <h3>Результати пошуку:</h3>
         <div class="list-group">
           <div *ngFor="let event of results" class="list-group-item">
-            <p><strong>Тип: </strong> {{ event.eventType || 'Невідомо' }}</p>
-            <p><strong>Місто: </strong> {{ event.city || 'Невідомо' }}</p>
-            <p><strong>Дата: </strong> {{ event.eventDate | date:"d MMMM y 'year'"}}</p>
+            <p><strong>Тип: </strong> {{ event.eventType }}</p>
+            <p><strong>Місто: </strong> {{ event.city }}</p>
+            <p><strong>Дата/Час: </strong> {{ event.eventDateTime | date:'yyyy-MM-dd HH:mm' }}</p>
+
+            <div>
+              <strong>Квитки:</strong>
+              <ul *ngIf="event.ticketOptions">
+                <li *ngFor="let opt of event.ticketOptions">
+                  Ціна: {{ opt.price }} грн, Місць: {{ opt.availableSeats }}
+                </li>
+              </ul>
+            </div>
             <p>
-              <strong>Ціна: </strong>
-              <span *ngIf="event.price !== 'Невідомо' && event.price">{{ event.price }} ₴</span>
-              <span *ngIf="!event.price || event.price === 'Невідомо'">Невідомо</span>
+              <strong>Посилання:</strong>
+              <a [href]="event.url" target="_blank">{{ event.url }}</a>
             </p>
-            <p>
-              <strong>Посилання: </strong>
-              <a [href]="event.url" target="_blank">{{ event.url || 'Невідомо' }}</a>
-            </p>
-            <p><strong>Текст: </strong> {{ event.rawText }}</p>
+            <p><strong>Детальна інформація: </strong> {{ event.rawText }}</p>
           </div>
         </div>
       </div>
