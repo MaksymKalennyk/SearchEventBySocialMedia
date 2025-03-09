@@ -1,9 +1,8 @@
 package com.example.searchingevents.controllers;
 
-import com.example.searchingevents.bot.ParsingService;
 import com.example.searchingevents.models.Event;
 import com.example.searchingevents.models.dto.EventDTO;
-import com.example.searchingevents.models.dto.SearchCriteria;
+import com.example.searchingevents.models.dto.EventSearchRequest;
 import com.example.searchingevents.models.dto.TicketOptionDTO;
 import com.example.searchingevents.services.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,46 +19,41 @@ import java.util.stream.Collectors;
 public class SearchController {
 
     private final EventService eventService;
-    private final ParsingService parsingService;
 
     @Autowired
-    public SearchController(EventService eventService, ParsingService parsingService) {
+    public SearchController(EventService eventService) {
         this.eventService = eventService;
-        this.parsingService = parsingService;
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<EventDTO>> searchEvents(@RequestBody String query) {
-        SearchCriteria criteria = parsingService.parseSearchCriteria(query);
-        if (criteria == null) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        String eventTypeStr = criteria.getEventType() != null ? criteria.getEventType().name() : null;
-        String cityStr = criteria.getCity() != null ? criteria.getCity().getValue() : null;
+    public ResponseEntity<List<EventDTO>> searchEvents(@RequestBody EventSearchRequest request) {
 
         List<Event> events = eventService.findEvents(
-                eventTypeStr,
-                cityStr,
-                criteria.getMaxPrice(),
-                criteria.getDateFrom(),
-                criteria.getDateTo()
+                request.getEventType(),
+                request.getCity(),
+                request.getMaxPrice(),
+                request.getDateFrom(),
+                request.getDateTo()
         );
 
         List<EventDTO> dtos = events.stream()
-                .map(this::convertToDTO)
+                .map(e -> convertToDTO(e, request.getMaxPrice()))
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(dtos);
     }
 
-    private EventDTO convertToDTO(Event event) {
+    private EventDTO convertToDTO(Event event, Integer maxPrice) {
         EventDTO dto = new EventDTO();
         dto.setId(event.getId());
         dto.setChatId(event.getChatId());
         dto.setMessageId(event.getMessageId());
         dto.setRawText(event.getRawText());
 
-        dto.setEventType(event.getEventType() != null ? event.getEventType().getDisplayValue() : "Невідомо");
+        dto.setEventType(event.getEventType() != null
+                ? event.getEventType().getDisplayValue()
+                : "Невідомо");
+
         dto.setEventDateTime(event.getEventDateTime());
         dto.setCity(event.getCity() != null ? event.getCity() : "Невідомо");
         dto.setUrl(event.getUrl());
@@ -67,6 +61,9 @@ public class SearchController {
 
         if (event.getTicketOptions() != null) {
             List<TicketOptionDTO> optionDTOs = event.getTicketOptions().stream()
+                    .filter(opt -> maxPrice == null
+                            || maxPrice <= 0
+                            || (opt.getPrice() != null && opt.getPrice() <= maxPrice))
                     .map(opt -> {
                         TicketOptionDTO oDto = new TicketOptionDTO();
                         oDto.setId(opt.getId());

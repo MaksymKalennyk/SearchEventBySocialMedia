@@ -1,7 +1,6 @@
 package com.example.searchingevents.bot;
 
 import com.example.searchingevents.models.Event;
-import com.example.searchingevents.models.dto.SearchCriteria;
 import com.example.searchingevents.models.enums.City;
 import com.example.searchingevents.models.enums.EventType;
 import org.slf4j.Logger;
@@ -113,55 +112,4 @@ public class ParsingService {
         });
         return sb.toString();
     }
-
-    public SearchCriteria parseSearchCriteria(String text) {
-        if (text == null || text.isEmpty()) {
-            return null;
-        }
-
-        String lower = removeEmojis(text).toLowerCase();
-        SearchCriteria criteria = new SearchCriteria();
-
-         Pattern budgetPattern = Pattern.compile("до\\s+(\\d+)\\s?(грн|₴|гривень)");
-        Matcher budgetMatcher = budgetPattern.matcher(lower);
-        if (budgetMatcher.find()) {
-            try {
-                int budget = Integer.parseInt(budgetMatcher.group(1));
-                criteria.setMaxPrice(budget);
-            } catch (NumberFormatException e) {
-                criteria.setMaxPrice(0);
-            }
-        } else {
-            criteria.setMaxPrice(0);
-        }
-
-        Pattern cityPattern = Pattern.compile("в\\s+((?:київ|києві)|(?:львів|львові)|(?:одеса|одесі))");
-        Matcher cityMatcher = cityPattern.matcher(lower);
-        if (cityMatcher.find()) {
-            String cityFound = cityMatcher.group(1);
-            City detectedCity = City.detect(cityFound);
-            criteria.setCity(detectedCity);
-        } else {
-            criteria.setCity(null);
-        }
-
-        boolean hasTheatre = lower.contains("театр") || lower.contains("вистава");
-        boolean hasConcert = lower.contains("концерт");
-        if (hasTheatre && hasConcert) {
-            criteria.setEventType(null);
-        } else if (hasConcert) {
-            criteria.setEventType(EventType.CONCERT);
-        } else if (hasTheatre) {
-            criteria.setEventType(EventType.THEATRE);
-        } else {
-            criteria.setEventType(null);
-        }
-
-        logger.info("Parsed search criteria: eventType={}, city={}, maxPrice={}, dateFrom={}, dateTo={}",
-                criteria.getEventType(),
-                criteria.getCity() != null ? criteria.getCity().getValue() : null,
-                criteria.getMaxPrice(), criteria.getDateFrom(), criteria.getDateTo());
-        return criteria;
-    }
-
 }
