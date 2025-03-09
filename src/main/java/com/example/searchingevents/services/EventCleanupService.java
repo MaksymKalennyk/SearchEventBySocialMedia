@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +17,7 @@ public class EventCleanupService {
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void deletePastEvents() {
-        LocalDate today = LocalDate.now();
-        eventRepository.deleteByEventDateBefore(today);
+        LocalDateTime today = LocalDateTime.now();
+        eventRepository.deleteByEventDateTimeBefore(today);
     }
 }

@@ -4,13 +4,13 @@ import com.example.searchingevents.models.enums.City;
 import com.example.searchingevents.models.enums.EventType;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class SearchCriteria {
     private EventType eventType;
     private City city;
     private int maxPrice;
-    private LocalDate dateFrom;
-    private LocalDate dateTo;
+    private LocalDateTime dateFrom;
+    private LocalDateTime dateTo;
 }

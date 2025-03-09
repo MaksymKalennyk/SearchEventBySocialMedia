@@ -26,8 +26,6 @@ public class EventBot extends TelegramLongPollingBot {
 
     private final EventService eventService;
     private final ParsingService parsingService;
-
-    // Додаємо SeleniumScraperService
     private final SeleniumScraperService seleniumScraperService;
 
     @Autowired
@@ -61,16 +59,16 @@ public class EventBot extends TelegramLongPollingBot {
         logger.info("Отримано новий update: {}", update);
 
         if (update.hasMessage() && update.getMessage().hasText()) {
-            boolean isGroup = update.getMessage().isGroupMessage()
+            boolean isGroup   = update.getMessage().isGroupMessage()
                     || update.getMessage().isSuperGroupMessage();
             boolean isChannel = update.getMessage().isChannelMessage();
 
             logger.info("Повідомлення з каналу: {}, з групи: {}", isChannel, isGroup);
 
             if (isChannel || isGroup) {
-                String text = update.getMessage().getText();
-                Long chatId = update.getMessage().getChatId();
-                Integer messageId = update.getMessage().getMessageId();
+                String text   = update.getMessage().getText();
+                Long chatId   = update.getMessage().getChatId();
+                Integer msgId = update.getMessage().getMessageId();
 
                 String cleanedText = parsingService.removeEmojis(text);
 
@@ -91,14 +89,20 @@ public class EventBot extends TelegramLongPollingBot {
                                     cleanedText
                             );
                             ev.setChatId(chatId);
-                            ev.setMessageId(messageId);
+                            ev.setMessageId(msgId);
                             ev.setRawText(cleanedText);
 
                             if (ev.getUrl() != null && !ev.getUrl().isEmpty()) {
                                 logger.info("Викликаємо SeleniumScraperService для URL={}", ev.getUrl());
-                                var ticketOptions = seleniumScraperService.scrapePrices(ev.getUrl());
-                                ticketOptions.forEach(opt -> opt.setEvent(ev));
-                                ev.getTicketOptions().addAll(ticketOptions);
+
+                                var scrapeResult = seleniumScraperService.scrapeEvent(ev.getUrl());
+
+                                ev.setEventDateTime(scrapeResult.getDateTime());
+
+                                for (var opt : scrapeResult.getTicketOptions()) {
+                                    opt.setEvent(ev);
+                                }
+                                ev.getTicketOptions().addAll(scrapeResult.getTicketOptions());
                             }
 
                             eventsToSave.add(ev);
@@ -108,14 +112,17 @@ public class EventBot extends TelegramLongPollingBot {
                         List<Event> fallbackList = parsingService.parseMultipleEvents(cleanedText);
                         for (Event ev : fallbackList) {
                             ev.setChatId(chatId);
-                            ev.setMessageId(messageId);
+                            ev.setMessageId(msgId);
                             ev.setRawText(cleanedText);
 
                             if (ev.getUrl() != null && !ev.getUrl().isEmpty()) {
                                 logger.info("Викликаємо SeleniumScraperService для URL={}", ev.getUrl());
-                                var ticketOptions = seleniumScraperService.scrapePrices(ev.getUrl());
-                                ticketOptions.forEach(opt -> opt.setEvent(ev));
-                                ev.getTicketOptions().addAll(ticketOptions);
+
+                                var scrapeResult = seleniumScraperService.scrapeEvent(ev.getUrl());
+                                ev.setEventDateTime(scrapeResult.getDateTime());
+
+                                scrapeResult.getTicketOptions().forEach(opt -> opt.setEvent(ev));
+                                ev.getTicketOptions().addAll(scrapeResult.getTicketOptions());
                             }
                             eventsToSave.add(ev);
                         }
@@ -124,14 +131,17 @@ public class EventBot extends TelegramLongPollingBot {
                     List<Event> fallbackList = parsingService.parseMultipleEvents(cleanedText);
                     for (Event ev : fallbackList) {
                         ev.setChatId(chatId);
-                        ev.setMessageId(messageId);
+                        ev.setMessageId(msgId);
                         ev.setRawText(cleanedText);
 
                         if (ev.getUrl() != null && !ev.getUrl().isEmpty()) {
                             logger.info("Викликаємо SeleniumScraperService для URL={}", ev.getUrl());
-                            var ticketOptions = seleniumScraperService.scrapePrices(ev.getUrl());
-                            ticketOptions.forEach(opt -> opt.setEvent(ev));
-                            ev.getTicketOptions().addAll(ticketOptions);
+
+                            var scrapeResult = seleniumScraperService.scrapeEvent(ev.getUrl());
+                            ev.setEventDateTime(scrapeResult.getDateTime());
+
+                            scrapeResult.getTicketOptions().forEach(opt -> opt.setEvent(ev));
+                            ev.getTicketOptions().addAll(scrapeResult.getTicketOptions());
                         }
                         eventsToSave.add(ev);
                     }

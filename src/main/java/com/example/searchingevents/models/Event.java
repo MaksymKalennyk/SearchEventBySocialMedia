@@ -4,7 +4,6 @@ import com.example.searchingevents.models.enums.EventType;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +29,7 @@ public class Event {
 
     @Enumerated(EnumType.STRING)
     private EventType eventType;
-    private LocalDate eventDate;
+    private LocalDateTime eventDateTime;
 
     private String city;
 

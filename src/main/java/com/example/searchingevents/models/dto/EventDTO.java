@@ -2,7 +2,6 @@ package com.example.searchingevents.models.dto;
 
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,10 +12,8 @@ public class EventDTO {
     private Integer messageId;
     private String rawText;
     private String eventType;
-    private LocalDate eventDate;
-
+    private LocalDateTime eventDateTime;
     private List<TicketOptionDTO> ticketOptions;
-
     private String city;
     private String url;
     private LocalDateTime createdAt;

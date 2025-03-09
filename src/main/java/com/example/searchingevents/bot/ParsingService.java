@@ -8,9 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,19 +19,15 @@ public class ParsingService {
 
     public Event parseFromTextLink(String textLink, String linkUrl, String fullMessage) {
         String cityPart = textLink;
-        String datePart = null;
 
         int commaIndex = textLink.indexOf(',');
         if (commaIndex != -1) {
             cityPart = textLink.substring(0, commaIndex).trim();
-            datePart = textLink.substring(commaIndex + 1).trim();
         }
 
         EventType detectedType = detectTypeFromText(fullMessage.toLowerCase());
 
         City detectedCity = City.detect(cityPart.toLowerCase());
-
-        LocalDate parsedDate = parseDate(datePart != null ? datePart.toLowerCase() : cityPart.toLowerCase());
 
         Event ev = new Event();
         ev.setEventType(detectedType);
@@ -43,7 +36,6 @@ public class ParsingService {
         } else {
             ev.setCity(cityPart);
         }
-        ev.setEventDate(parsedDate);
         ev.setUrl(linkUrl);
 
         return ev;
@@ -64,11 +56,9 @@ public class ParsingService {
         List<Event> events = new ArrayList<>();
         while (matcher.find()) {
             String cityPart = matcher.group(1).trim();
-            String datePart = matcher.group(2).trim();
             String urlPart  = matcher.group(3).trim();
 
             City detectedCity = City.detect(cityPart.toLowerCase());
-            LocalDate parsedDate = parseDate(datePart.toLowerCase());
 
             Event ev = new Event();
             ev.setEventType(detectedType);
@@ -79,7 +69,6 @@ public class ParsingService {
             } else {
                 ev.setCity(cityPart);
             }
-            ev.setEventDate(parsedDate);
 
             events.add(ev);
         }
@@ -100,53 +89,18 @@ public class ParsingService {
             return null;
         }
         City detectedCity = City.detect(text.toLowerCase());
-        LocalDate date = parseDate(text.toLowerCase());
 
         Event e = new Event();
         e.setEventType(detectedType);
         if (detectedCity != null) {
             e.setCity(detectedCity.getValue());
         }
-        e.setEventDate(date);
 
         return e;
     }
 
     private EventType detectTypeFromText(String lower) {
         return EventType.detect(lower);
-    }
-
-    private LocalDate parseDate(String lower) {
-        Map<String, Integer> monthMap = new HashMap<>();
-        monthMap.put("січня", 1);
-        monthMap.put("лютого", 2);
-        monthMap.put("березня", 3);
-        monthMap.put("квітня", 4);
-        monthMap.put("травня", 5);
-        monthMap.put("червня", 6);
-        monthMap.put("липня", 7);
-        monthMap.put("серпня", 8);
-        monthMap.put("вересня", 9);
-        monthMap.put("жовтня", 10);
-        monthMap.put("листопада", 11);
-        monthMap.put("грудня", 12);
-
-        String regex = "\\b(\\d{1,2})\\s+(січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня)\\b";
-        Matcher m = Pattern.compile(regex).matcher(lower);
-        if (m.find()) {
-            String dayStr = m.group(1);
-            String monthStr = m.group(2);
-            int day = Integer.parseInt(dayStr);
-            int month = monthMap.getOrDefault(monthStr, 0);
-
-            int year = Year.now().getValue();
-            try {
-                return java.time.LocalDate.of(year, month, day);
-            } catch (DateTimeException e) {
-                return null;
-            }
-        }
-        return null;
     }
 
     public String removeEmojis(String text) {
@@ -168,21 +122,7 @@ public class ParsingService {
         String lower = removeEmojis(text).toLowerCase();
         SearchCriteria criteria = new SearchCriteria();
 
-        Pattern dateRangePattern = Pattern.compile("з\\s+(\\d{1,2}\\s+\\p{L}+)\\s+до\\s+(\\d{1,2}\\s+\\p{L}+)");
-        Matcher dateRangeMatcher = dateRangePattern.matcher(lower);
-        if (dateRangeMatcher.find()) {
-            String fromDateStr = dateRangeMatcher.group(1).trim();
-            String toDateStr = dateRangeMatcher.group(2).trim();
-            LocalDate dateFrom = parseDate(fromDateStr);
-            LocalDate dateTo = parseDate(toDateStr);
-            criteria.setDateFrom(dateFrom);
-            criteria.setDateTo(dateTo);
-        } else {
-            criteria.setDateFrom(null);
-            criteria.setDateTo(null);
-        }
-
-        Pattern budgetPattern = Pattern.compile("до\\s+(\\d+)\\s?(грн|₴|гривень)");
+         Pattern budgetPattern = Pattern.compile("до\\s+(\\d+)\\s?(грн|₴|гривень)");
         Matcher budgetMatcher = budgetPattern.matcher(lower);
         if (budgetMatcher.find()) {
             try {

@@ -60,7 +60,7 @@ public class SearchController {
         dto.setRawText(event.getRawText());
 
         dto.setEventType(event.getEventType() != null ? event.getEventType().getDisplayValue() : "Невідомо");
-        dto.setEventDate(event.getEventDate());
+        dto.setEventDateTime(event.getEventDateTime());
         dto.setCity(event.getCity() != null ? event.getCity() : "Невідомо");
         dto.setUrl(event.getUrl());
         dto.setCreatedAt(event.getCreatedAt());

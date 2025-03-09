@@ -5,7 +5,6 @@ import com.example.searchingevents.repos.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,7 +31,7 @@ public class EventService {
      * 3) maxPrice (перевіряємо мінімальну ціну серед ticketOptions)
      * 4) діапазон дат
      */
-    public List<Event> findEvents(String eventTypeStr, String city, int maxPrice, LocalDate fromDate, LocalDate toDate) {
+    public List<Event> findEvents(String eventTypeStr, String city, int maxPrice, LocalDateTime fromDate, LocalDateTime toDate) {
         List<Event> all = eventRepository.findAll();
 
         return all.stream()
@@ -56,8 +55,8 @@ public class EventService {
                 })
                 .filter(e -> {
                     if (fromDate == null || toDate == null) return true;
-                    if (e.getEventDate() == null) return true;
-                    return !e.getEventDate().isBefore(fromDate) && !e.getEventDate().isAfter(toDate);
+                    if (e.getEventDateTime() == null) return true;
+                    return !e.getEventDateTime().isBefore(fromDate) && !e.getEventDateTime().isAfter(toDate);
                 })
                 .collect(Collectors.toList());
     }
