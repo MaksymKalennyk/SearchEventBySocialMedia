@@ -1,27 +1,30 @@
 package com.example.searchingevents.services;
 
 import com.example.searchingevents.models.Event;
+import com.example.searchingevents.models.TicketOption;
+import com.example.searchingevents.models.enums.EventType;
 import com.example.searchingevents.repos.EventRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class EventService {
 
     private final EventRepository eventRepository;
 
-    @Autowired
-    public EventService(EventRepository eventRepository) {
-        this.eventRepository = eventRepository;
-    }
-
     public Event saveEvent(Event event) {
         event.setCreatedAt(LocalDateTime.now());
         return eventRepository.save(event);
+    }
+
+    public Optional<Event> findEventById(Long id) {
+        return eventRepository.findById(id);
     }
 
     /**
@@ -59,6 +62,38 @@ public class EventService {
                     return !e.getEventDateTime().isBefore(fromDate) && !e.getEventDateTime().isAfter(toDate);
                 })
                 .collect(Collectors.toList());
+    }
+
+    public int getAveragePrice(Event event) {
+        if (event.getTicketOptions() == null || event.getTicketOptions().isEmpty()) {
+            return 0;
+        }
+        int sum = 0, count = 0;
+        for (TicketOption opt : event.getTicketOptions()) {
+            if (opt.getPrice() != null) {
+                sum += opt.getPrice();
+                count++;
+            }
+        }
+        if (count == 0) return 0;
+        return sum / count;
+    }
+
+    public List<Event> findEventsByUserInterest(String city, EventType type, int minBudget, int maxBudget) {
+       List<Event> all = eventRepository.findAll();
+
+        return all.stream()
+                .filter(e -> e.getCity() != null && e.getCity().equalsIgnoreCase(city))
+                .filter(e -> e.getEventType() == type)
+                .filter(e -> {
+                    if (e.getTicketOptions() == null || e.getTicketOptions().isEmpty()) return false;
+                    return e.getTicketOptions().stream().anyMatch(opt -> {
+                        Integer p = opt.getPrice();
+                        if (p == null) return false;
+                        return p >= minBudget && p <= maxBudget;
+                    });
+                })
+                .toList();
     }
 }
 
