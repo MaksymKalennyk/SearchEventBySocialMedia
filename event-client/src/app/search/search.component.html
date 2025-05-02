@@ -120,7 +120,9 @@
             </div>
             <p>
               <strong>Посилання:</strong>
-              <a [href]="event.url" target="_blank">{{ event.url }}</a>
+              <a href="#" (click)="trackAndOpen(event, $event)">
+                {{ event.url }}
+              </a>
             </p>
             <p><strong>Детальна інформація: </strong> {{ event.rawText }}</p>
           </div>
@@ -129,6 +131,7 @@
       <div *ngIf="results && results.length === 0" class="mt-4">
         <div class="alert alert-info">За вашим запитом нічого не знайдено.</div>
       </div>
+      <app-recommendation-list></app-recommendation-list>
     </div>
   </div>
 </div>

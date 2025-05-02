@@ -1,0 +1,36 @@
+<div class="my-3">
+  <h4>Рекомендації для Вас</h4>
+
+  <div *ngIf="error" class="alert alert-danger">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!recommendedEvents || (recommendedEvents.length === 0 && !error)">
+    <div class="alert alert-info">
+      Немає рекомендацій
+    </div>
+  </div>
+
+  <div class="list-group">
+    <div *ngFor="let event of recommendedEvents" class="list-group-item">
+      <p><strong>Тип: </strong> {{ event.eventType }}</p>
+      <p><strong>Місто: </strong> {{ event.city }}</p>
+      <p><strong>Дата/Час: </strong> {{ event.eventDateTime | date:'yyyy-MM-dd HH:mm' }}</p>
+
+      <div>
+        <strong>Квитки:</strong>
+        <ul *ngIf="event.ticketOptions">
+          <li *ngFor="let opt of event.ticketOptions">
+            Ціна: {{ opt.price }} грн, Місць: {{ opt.availableSeats }}
+          </li>
+        </ul>
+      </div>
+      <p *ngIf="event.rawText">
+        <strong>Детальна інформація: </strong>{{ event.rawText }}
+      </p>
+      <a href="#" (click)="trackAndOpen(event, $event)" class="btn btn-primary">
+        Перейти
+      </a>
+    </div>
+  </div>
+</div>

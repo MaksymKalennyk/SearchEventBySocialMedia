@@ -95,6 +95,24 @@ export class SearchComponent implements OnInit {
     return null;
   }
 
+  trackAndOpen(event: EventDTO, e: MouseEvent): void {
+    e.preventDefault();
+
+    this.searchService.trackEvent(event.id).subscribe({
+      next: () => {
+        if (event.url) {
+          window.open(event.url, '_blank');
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        if (event.url) {
+          window.open(event.url, '_blank');
+        }
+      }
+    });
+  }
+
   get dateFromCtrl() { return this.searchForm.get('dateFrom'); }
   get dateToCtrl() { return this.searchForm.get('dateTo'); }
   get cityCtrl() { return this.searchForm.get('city'); }

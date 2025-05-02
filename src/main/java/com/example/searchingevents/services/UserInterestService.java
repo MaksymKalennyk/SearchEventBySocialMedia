@@ -40,6 +40,7 @@ public class UserInterestService {
         }
     }
 
+    //TODO:
     public List<Event> getRecommendedEvents(Users user, int limit) {
         List<UserInterest> interests = userInterestRepository.findAllByUserOrderByFrequencyDesc(user);
 
@@ -60,7 +61,6 @@ public class UserInterestService {
                 }
             }
         }
-
         return result;
     }
 }

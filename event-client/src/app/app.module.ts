@@ -7,6 +7,7 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { LoginComponent } from './login/login.component';
 import { RegistrationComponent } from './registration/registration.component';
 import {RouterModule, Routes} from '@angular/router';
+import { RecommendationListComponent } from './recommendation-list/recommendation-list.component';
 
 const routes: Routes = [
   { path: '', component: LoginComponent },
@@ -19,7 +20,8 @@ const routes: Routes = [
     AppComponent,
     SearchComponent,
     LoginComponent,
-    RegistrationComponent
+    RegistrationComponent,
+    RecommendationListComponent
   ],
   imports: [
     BrowserModule,

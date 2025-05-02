@@ -27,4 +27,32 @@ export class SearchService {
         })
       );
   }
+
+  trackEvent(eventId: number): Observable<void> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    });
+
+    return this.http.post<void>(`${this.apiUrl}/events/track/${eventId}`, null, { headers })
+      .pipe(
+        catchError(error => {
+          console.error('Помилка при трекінгу івенту:', error);
+          return throwError(() => new Error('Помилка при трекінгу івенту'));
+        })
+      );
+  }
+
+  getTopEvents(): Observable<EventDTO[]> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    });
+
+    return this.http.get<EventDTO[]>(`${this.apiUrl}/events/top`, { headers })
+      .pipe(
+        catchError(error => {
+          console.error('Помилка при отриманні рекомендацій:', error);
+          return throwError(() => new Error('Помилка при отриманні рекомендацій'));
+        })
+      );
+  }
 }
