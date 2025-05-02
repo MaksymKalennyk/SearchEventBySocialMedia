@@ -27,6 +27,10 @@ public class EventService {
         return eventRepository.findById(id);
     }
 
+    public List<Event> findAll() {
+        return eventRepository.findAll();
+    }
+
     /**
      * Фільтруємо події за:
      * 1) eventTypeStr (null = не фільтруємо)
@@ -35,7 +39,7 @@ public class EventService {
      * 4) діапазон дат
      */
     public List<Event> findEvents(String eventTypeStr, String city, int maxPrice, LocalDateTime fromDate, LocalDateTime toDate) {
-        List<Event> all = eventRepository.findAll();
+        List<Event> all = findAll();
 
         return all.stream()
                 .filter(e -> {

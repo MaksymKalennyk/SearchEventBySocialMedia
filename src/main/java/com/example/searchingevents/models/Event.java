@@ -39,5 +39,6 @@ public class Event {
     private List<TicketOption> ticketOptions = new ArrayList<>();
 
     private LocalDateTime createdAt;
+    private LocalDateTime lastUpdatedAt;
 
 }

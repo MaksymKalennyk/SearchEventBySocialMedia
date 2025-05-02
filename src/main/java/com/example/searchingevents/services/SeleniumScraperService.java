@@ -65,7 +65,7 @@ public class SeleniumScraperService {
 
             if (rawIframeLink == null || rawIframeLink.isBlank()) {
                 logger.warn("iframelink порожній, не можемо знайти URL схеми залу.");
-                return result; // повернемо, але list<TicketOption> буде пустим
+                return result;
             }
 
             JsonNode node = mapper.readTree(rawIframeLink);
@@ -123,8 +123,6 @@ public class SeleniumScraperService {
      * @return LocalDateTime
      */
     private LocalDateTime parseDateTime(String dateTimeText) {
-        // Приклад: "12 березня 2025, 18:00"
-        // Спочатку розділимо за комою
         String[] parts = dateTimeText.split(",");
         if (parts.length < 2) {
             logger.warn("Несподіваний формат: '{}'", dateTimeText);
@@ -134,12 +132,23 @@ public class SeleniumScraperService {
         String datePart = parts[0].trim();
         String timePart = parts[1].trim();
 
-        String[] dateTokens = datePart.split("\\s+"); // [ "12", "березня", "2025" ]
+        String[] dateTokens = datePart.split("\\s+");
         if (dateTokens.length < 3) return null;
         int day = Integer.parseInt(dateTokens[0]);
-        String monthStr = dateTokens[1].toLowerCase(); // "березня"
+        String monthStr = dateTokens[1].toLowerCase();
         int year = Integer.parseInt(dateTokens[2]);
 
+        int month = getMonth(monthStr);
+
+        String[] hours = timePart.split(":");
+        if (hours.length < 2) return null;
+        int hour = Integer.parseInt(hours[0]);
+        int minute = Integer.parseInt(hours[1]);
+
+        return LocalDateTime.of(year, month, day, hour, minute);
+    }
+
+    private int getMonth(String monthStr) {
         Map<String, Integer> monthMap = new HashMap<>();
         monthMap.put("січня", 1);
         monthMap.put("лютого", 2);
@@ -154,14 +163,7 @@ public class SeleniumScraperService {
         monthMap.put("листопада", 11);
         monthMap.put("грудня", 12);
 
-        int month = monthMap.getOrDefault(monthStr, 1);
-
-        String[] hours = timePart.split(":");
-        if (hours.length < 2) return null;
-        int hour = Integer.parseInt(hours[0]);
-        int minute = Integer.parseInt(hours[1]);
-
-        return LocalDateTime.of(year, month, day, hour, minute);
+        return monthMap.getOrDefault(monthStr, 1);
     }
 
     private int parsePrice(String priceAttr) {
