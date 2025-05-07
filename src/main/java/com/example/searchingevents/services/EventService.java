@@ -99,5 +99,9 @@ public class EventService {
                 })
                 .toList();
     }
+
+    public Optional<Event> findByMessageId(Integer messageId) {
+        return eventRepository.findByMessageId(messageId);
+    }
 }
 

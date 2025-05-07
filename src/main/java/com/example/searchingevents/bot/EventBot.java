@@ -27,15 +27,17 @@ public class EventBot extends TelegramLongPollingBot {
     private final EventService eventService;
     private final ParsingService parsingService;
     private final SeleniumScraperService seleniumScraperService;
+    private final CommentProcessingService commentProcessingService;
 
     @Autowired
     public EventBot(EventService eventService,
                     ParsingService parsingService,
-                    SeleniumScraperService seleniumScraperService) {
+                    SeleniumScraperService seleniumScraperService, CommentProcessingService commentProcessingService) {
         super(new DefaultBotOptions());
         this.eventService = eventService;
         this.parsingService = parsingService;
         this.seleniumScraperService = seleniumScraperService;
+        this.commentProcessingService = commentProcessingService;
         logger.info("EventBot створено з EventService, ParsingService, та SeleniumScraperService");
     }
 
@@ -155,6 +157,11 @@ public class EventBot extends TelegramLongPollingBot {
                 } else {
                     logger.warn("Не вдалося розпізнати жоден івент у повідомленні: {}", text);
                 }
+
+                if (update.hasMessage() && update.getMessage().getReplyToMessage() != null) {
+                    commentProcessingService.processComment(update.getMessage());
+                }
+
             }
         } else {
             logger.debug("Update не містить текстового повідомлення.");
