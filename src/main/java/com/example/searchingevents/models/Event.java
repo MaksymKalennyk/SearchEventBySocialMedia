@@ -38,6 +38,9 @@ public class Event {
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TicketOption> ticketOptions = new ArrayList<>();
 
+    @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private EventEngagementMetrics engagementMetrics;
+
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdatedAt;
 

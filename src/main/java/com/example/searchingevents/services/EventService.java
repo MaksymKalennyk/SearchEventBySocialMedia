@@ -1,6 +1,7 @@
 package com.example.searchingevents.services;
 
 import com.example.searchingevents.models.Event;
+import com.example.searchingevents.models.EventEngagementMetrics;
 import com.example.searchingevents.models.TicketOption;
 import com.example.searchingevents.models.enums.EventType;
 import com.example.searchingevents.repos.EventRepository;
@@ -65,6 +66,10 @@ public class EventService {
                     if (e.getEventDateTime() == null) return true;
                     return !e.getEventDateTime().isBefore(fromDate) && !e.getEventDateTime().isAfter(toDate);
                 })
+                .sorted((a, b) -> Integer.compare(
+                        getEngagementScore(b),
+                        getEngagementScore(a)
+                ))
                 .collect(Collectors.toList());
     }
 
@@ -97,11 +102,24 @@ public class EventService {
                         return p >= minBudget && p <= maxBudget;
                     });
                 })
+                .sorted((a, b) -> Integer.compare(
+                        getEngagementScore(b),
+                        getEngagementScore(a)
+                ))
                 .toList();
     }
 
     public Optional<Event> findByMessageId(Integer messageId) {
         return eventRepository.findByMessageId(messageId);
+    }
+
+    public int getEngagementScore(Event event) {
+        EventEngagementMetrics metrics = event.getEngagementMetrics();
+        if (metrics == null) return 0;
+
+        return (metrics.getPositiveCommentCount() != null ? metrics.getPositiveCommentCount() : 0) * 2
+                - (metrics.getNegativeCommentCount() != null ? metrics.getNegativeCommentCount() : 0) * 2
+                + (metrics.getNeutralCommentCount() != null ? metrics.getNeutralCommentCount() : 0);
     }
 }
 
