@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {SearchService} from '../search/SearchService';
-import {EventDTO} from '../search/model/EventDTO';
+import {EventTopDTO} from './model/EventTopDTO';
 
 @Component({
   selector: 'app-recommendation-list',
@@ -9,7 +9,7 @@ import {EventDTO} from '../search/model/EventDTO';
   styleUrl: './recommendation-list.component.css'
 })
 export class RecommendationListComponent implements OnInit {
-  recommendedEvents: EventDTO[] = [];
+  recommendedEvents: EventTopDTO[] = [];
   error: string = '';
 
   constructor(private searchService: SearchService) {}
@@ -18,6 +18,7 @@ export class RecommendationListComponent implements OnInit {
     this.searchService.getTopEvents().subscribe({
       next: (data) => {
         this.recommendedEvents = data;
+        console.log(data);
       },
       error: (err) => {
         console.error(err);
@@ -29,7 +30,7 @@ export class RecommendationListComponent implements OnInit {
   /**
    * Метод, що відправляє trackEvent, а потім відкриває посилання
    */
-  trackAndOpen(event: EventDTO, e: MouseEvent): void {
+  trackAndOpen(event: EventTopDTO, e: MouseEvent): void {
     e.preventDefault();
     this.searchService.trackEvent(event.id).subscribe({
       next: () => {

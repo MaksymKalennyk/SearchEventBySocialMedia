@@ -40,9 +40,12 @@ public class UserInterestService {
         }
     }
 
-    //TODO:
     public List<Event> getRecommendedEvents(Users user, int limit) {
         List<UserInterest> interests = userInterestRepository.findAllByUserOrderByFrequencyDesc(user);
+
+        if (interests == null || interests.isEmpty()) {
+            return eventService.findTopEventsByEngagement(limit);
+        }
 
         List<Event> result = new ArrayList<>();
         for (UserInterest i : interests) {

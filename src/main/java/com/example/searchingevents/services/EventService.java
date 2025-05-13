@@ -113,6 +113,18 @@ public class EventService {
         return eventRepository.findByMessageId(messageId);
     }
 
+    public List<Event> findTopEventsByEngagement(int limit) {
+        List<Event> all = eventRepository.findAll();
+
+        return all.stream()
+                .sorted((a, b) -> Integer.compare(
+                        getEngagementScore(b),
+                        getEngagementScore(a)
+                ))
+                .limit(limit)
+                .toList();
+    }
+
     public int getEngagementScore(Event event) {
         EventEngagementMetrics metrics = event.getEngagementMetrics();
         if (metrics == null) return 0;

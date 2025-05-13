@@ -4,6 +4,7 @@ import {AuthService} from '../services/AuthService';
 import {catchError, Observable, throwError} from 'rxjs';
 import {EventSearchRequest} from './model/EventSearchRequest';
 import {EventDTO} from './model/EventDTO';
+import {EventTopDTO} from '../recommendation-list/model/EventTopDTO';
 
 @Injectable({
   providedIn: 'root'
@@ -42,12 +43,12 @@ export class SearchService {
       );
   }
 
-  getTopEvents(): Observable<EventDTO[]> {
+  getTopEvents(): Observable<EventTopDTO[]> {
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${this.authService.getToken()}`
     });
 
-    return this.http.get<EventDTO[]>(`${this.apiUrl}/events/top`, { headers })
+    return this.http.get<EventTopDTO[]>(`${this.apiUrl}/events/top`, { headers })
       .pipe(
         catchError(error => {
           console.error('Помилка при отриманні рекомендацій:', error);
